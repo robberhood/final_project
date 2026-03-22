@@ -4,16 +4,19 @@ import (
 	"database/sql"
 	"os"
 
+	"github.com/robberhood/final_project/config"
 	_ "modernc.org/sqlite"
 )
 
 const schema = `CREATE TABLE scheduler (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		date CHAR(8) NOT NULL DEFAULT "",
-		title VARCHAR(256) NOT NULL,
+		title VARCHAR(256) NOT NULL DEFAULT "",
 		comment TEXT,
-		repeat VARCHAR(128) NOT NULL);
+		repeat VARCHAR(128) NOT NULL DEFAULT "");
 		CREATE INDEX idx_tasks_date ON scheduler(date);`
+
+var db *sql.DB
 
 func Init(dbFile string) error {
 	_, err := os.Stat(dbFile)
@@ -23,7 +26,7 @@ func Init(dbFile string) error {
 		install = true
 	}
 
-	db, err := sql.Open("sqlite", dbFile)
+	db, err = sql.Open("sqlite", dbFile)
 	if err != nil {
 		return err
 	}
@@ -37,4 +40,16 @@ func Init(dbFile string) error {
 	}
 
 	return nil
+}
+
+func AddTask(task *config.Task) (int64, error) {
+
+	var id int64
+	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
+	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
+	if err == nil {
+		id, err = res.LastInsertId()
+	}
+	return id, err
+
 }

@@ -1,17 +1,21 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/robberhood/final_project/config"
 )
 
 const DateFormat = "20060102"
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	if repeat == "" {
-		return "", errors.New("field 'repeat' is empty")
+		return dstart, nil
 	}
 
 	date, err := time.Parse(DateFormat, dstart)
@@ -35,11 +39,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
-	//Do it
-	// case "m":
-	//
-	// case "w":
-	//
+
 	case "d":
 		if len(parts_repeat) != 2 {
 			return "", errors.New("field 'repeat' has invalid format")
@@ -57,6 +57,16 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
+	case "w", "m":
+		//Do it
+		// case "m":
+		//
+		// case "w":
+		//
+		return "", errors.New("field 'repeat' has invalid format")
+
+	default:
+		return "", errors.New("field 'repeat' has invalid format")
 	}
 
 	return date.Format(DateFormat), nil
@@ -65,4 +75,44 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 func afterNow(date time.Time, now time.Time) bool {
 	return date.After(now)
+}
+
+func CheckDate(task *config.Task) error {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	if task.Date == "" {
+		task.Date = now.Format(DateFormat)
+		return nil
+	}
+
+	t, err := time.Parse(DateFormat, task.Date)
+	if err != nil {
+		return err
+	}
+
+	next, err := NextDate(now, task.Date, task.Repeat)
+	if err != nil {
+		return err
+	}
+
+	if afterNow(today, t) {
+		if len(task.Repeat) == 0 {
+			task.Date = now.Format(DateFormat)
+		} else {
+			task.Date = next
+		}
+	}
+	return nil
+}
+
+func WriteJson(w http.ResponseWriter, data any) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(data)
+}
+
+func WriteError(w http.ResponseWriter, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 }
