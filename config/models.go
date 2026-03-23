@@ -6,9 +6,13 @@ type Config struct {
 }
 
 type Task struct {
-	ID      int64  `json:"id"`
+	ID      string `json:"id"`
 	Date    string `json:"date"`
 	Title   string `json:"title"`
 	Comment string `json:"comment"`
 	Repeat  string `json:"repeat"`
+}
+
+type TasksResp struct {
+	Tasks []*Task `json:"tasks"`
 }

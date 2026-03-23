@@ -8,4 +8,5 @@ import (
 func Init(r chi.Router) {
 	r.Get("/api/nextdate", handlers.NextDayHandler)
 	r.Post("/api/task", handlers.TaskHandler)
+	r.Get("/api/tasks", handlers.TasksHandler)
 }

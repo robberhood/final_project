@@ -65,3 +65,12 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	service.WriteJson(w, map[string]any{"id": id})
 
 }
+
+func TasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks, err := db.Tasks(50)
+	if err != nil {
+		service.WriteError(w, err)
+		return
+	}
+	service.WriteJson(w, config.TasksResp{Tasks: tasks})
+}
