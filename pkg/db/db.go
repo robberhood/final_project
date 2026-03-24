@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"os"
 
 	"github.com/robberhood/final_project/config"
@@ -85,4 +87,39 @@ func Tasks(limit int) ([]*config.Task, error) {
 		tasks = []*config.Task{}
 	}
 	return tasks, nil
+}
+func GetTask(id string) (*config.Task, error) {
+	var t config.Task
+	query := `SELECT id,date, title, comment, repeat FROM scheduler WHERE id=?`
+	err := db.QueryRow(query, id).Scan(
+		&t.ID,
+		&t.Date,
+		&t.Title,
+		&t.Comment,
+		&t.Repeat,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("task not found")
+		}
+		return nil, err
+	}
+	return &t, nil
+}
+
+func UpdateTask(task *config.Task) error {
+	query := `UPDATE scheduler SET date=?, title=?, comment=?, repeat=? WHERE id=?`
+	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf(`incorrect id for updating task`)
+	}
+	return nil
 }

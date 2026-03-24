@@ -74,3 +74,50 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	service.WriteJson(w, config.TasksResp{Tasks: tasks})
 }
+
+func TaskGetHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		service.WriteJson(w, map[string]string{"error": "No identifier specified"})
+		return
+	}
+
+	t, err := db.GetTask(id)
+	if err != nil {
+		service.WriteJson(w, map[string]string{"error": "Task not found"})
+		return
+	}
+
+	service.WriteJson(w, t)
+}
+func TaskUPDHandler(w http.ResponseWriter, r *http.Request) {
+	var t config.Task
+
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		service.WriteJson(w, map[string]string{"error": err.Error()})
+		return
+	}
+
+	if t.ID == "" {
+		service.WriteJson(w, map[string]string{"error": "No identifier specified"})
+		return
+	}
+
+	if t.Title == "" {
+		service.WriteJson(w, map[string]string{"error": "title must be not empty"})
+		return
+	}
+
+	if err := service.CheckDate(&t); err != nil {
+		service.WriteJson(w, map[string]string{"error": err.Error()})
+		return
+	}
+
+	err := db.UpdateTask(&t)
+	if err != nil {
+		service.WriteJson(w, map[string]string{"error": "Task not found"})
+		return
+	}
+
+	service.WriteJson(w, map[string]any{})
+}
