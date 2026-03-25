@@ -18,5 +18,12 @@ func Init(path string) (*Config, error) {
 		return nil, err
 	}
 
+	if port := os.Getenv("TODO_PORT"); port != "" {
+		if port[0] != ':' {
+			port = ":" + port
+		}
+		cfg.Port = port
+	}
+
 	return &cfg, nil
 }
