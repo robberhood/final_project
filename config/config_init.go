@@ -25,5 +25,9 @@ func Init(path string) (*Config, error) {
 		cfg.Port = port
 	}
 
+	if db := os.Getenv("TODO_DBFILE"); db != "" {
+		cfg.DBPath = db
+	}
+
 	return &cfg, nil
 }
