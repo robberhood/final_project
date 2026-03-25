@@ -15,7 +15,7 @@ const DateFormat = "20060102"
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	if repeat == "" {
-		return dstart, nil
+		return "", nil
 	}
 
 	date, err := time.Parse(DateFormat, dstart)

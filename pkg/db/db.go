@@ -123,3 +123,36 @@ func UpdateTask(task *config.Task) error {
 	}
 	return nil
 }
+func DeleteTask(id string) error {
+	query := `DELETE FROM scheduler WHERE id=?`
+	res, err := db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf(`incorrect id for deleting task`)
+	}
+	return nil
+}
+
+func UpdateDate(id string, date string) error {
+	query := `UPDATE scheduler SET date=? WHERE id=?`
+	res, err := db.Exec(query, date, id)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf(`incorrect id for updating task`)
+	}
+	return nil
+}

@@ -121,3 +121,61 @@ func TaskUPDHandler(w http.ResponseWriter, r *http.Request) {
 
 	service.WriteJson(w, map[string]any{})
 }
+
+func TaskCompleteHandler(w http.ResponseWriter, r *http.Request) {
+	var t *config.Task
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		service.WriteJson(w, map[string]string{"error": "No identifier specified"})
+		return
+	}
+
+	t, err := db.GetTask(id)
+	if err != nil {
+		service.WriteJson(w, map[string]string{"error": "Task not found"})
+		return
+	}
+
+	if t.Repeat == "" {
+		err = db.DeleteTask(id)
+		if err != nil {
+			service.WriteJson(w, map[string]string{"error": "Task not found"})
+			return
+		}
+	} else {
+		taskDate, err := time.Parse(service.DateFormat, t.Date)
+		if err != nil {
+			service.WriteJson(w, map[string]string{"error": "Invalid task date"})
+			return
+		}
+		next, err := service.NextDate(taskDate, t.Date, t.Repeat)
+		if err != nil {
+			service.WriteJson(w, map[string]string{"error": err.Error()})
+			return
+		}
+		t.Date = next
+		err = db.UpdateDate(id, next)
+		if err != nil {
+			service.WriteJson(w, map[string]string{"error": "Task not found"})
+			return
+		}
+	}
+	service.WriteJson(w, map[string]any{})
+
+}
+
+func TaskDELHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		service.WriteJson(w, map[string]string{"error": "No identifier specified"})
+		return
+	}
+
+	err := db.DeleteTask(id)
+	if err != nil {
+		service.WriteJson(w, map[string]string{"error": "Task not found"})
+		return
+	}
+
+	service.WriteJson(w, map[string]any{})
+}
