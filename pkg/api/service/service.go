@@ -1,13 +1,16 @@
 package service
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/robberhood/final_project/config"
 )
 
@@ -114,6 +117,48 @@ func CheckDate(task *config.Task) error {
 		}
 	}
 	return nil
+}
+
+func GenerateToken(secret string) (string, error) {
+	claims := jwt.MapClaims{
+		"pass_hash": sha256.Sum256([]byte(secret)),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
+}
+
+func Auth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pass := os.Getenv("TODO_PASSWORD")
+		if len(pass) > 0 {
+			var jwtT string
+			cookie, err := r.Cookie("token")
+			if err != nil {
+				http.Error(w, "Authentication required", http.StatusUnauthorized)
+				return
+			}
+			jwtT = cookie.Value
+
+			var valid bool
+			token, err := jwt.Parse(jwtT, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrTokenMalformed
+				}
+				return []byte(pass), nil
+			})
+
+			if err == nil && token.Valid {
+				valid = true
+			}
+
+			if !valid {
+				http.Error(w, "Authentication required", http.StatusUnauthorized)
+				return
+			}
+		}
+
+		next(w, r)
+	})
 }
 
 func WriteJson(w http.ResponseWriter, data any) {

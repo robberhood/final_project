@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/robberhood/final_project/config"
@@ -202,16 +203,34 @@ func TaskDELHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
+	passEnv := os.Getenv("TODO_PASSWORD")
+	if passEnv == "" {
+		service.WriteJson(w, map[string]string{"error": "Password is missing"})
+		return
+	}
 	var pass config.Pass
 
 	if err := json.NewDecoder(r.Body).Decode(&pass); err != nil {
 		service.WriteJson(w, map[string]string{"error": err.Error()})
 		return
 	}
-	if pass.Password != config.Password {
+	if pass.Password != passEnv {
 		service.WriteJson(w, map[string]string{"error": "Incorrect password"})
 		return
 	}
-	pass.Token = service.GenerateToken()
-	service.WriteJson(w, pass)
+	passToken, err := service.GenerateToken(passEnv)
+	if err != nil {
+		service.WriteJson(w, map[string]string{"error": "Failed to generate token"})
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    passToken,
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Now().Add(24 * time.Hour),
+	})
+
+	service.WriteJson(w, map[string]string{"token": passToken})
 }

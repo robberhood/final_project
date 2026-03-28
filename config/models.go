@@ -1,9 +1,8 @@
 package config
 
 type Config struct {
-	DBPath   string `yaml:"dbpath"`
-	Port     string `yaml:"port"`
-	Password string `yaml:"password"`
+	DBPath string `yaml:"dbpath"`
+	Port   string `yaml:"port"`
 }
 
 type Task struct {
