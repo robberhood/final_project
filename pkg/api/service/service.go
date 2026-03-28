@@ -21,7 +21,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	// var month [13]bool
 
 	if repeat == "" {
-		return "", nil
+		return "", errors.New("field 'repeat' has invalid format")
 	}
 
 	date, err := time.Parse(DateFormat, dstart)
@@ -126,20 +126,18 @@ func GenerateToken(secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
 }
-
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pass := os.Getenv("TODO_PASSWORD")
 		if len(pass) > 0 {
-			var jwtT string
 			cookie, err := r.Cookie("token")
 			if err != nil {
-				http.Error(w, "Authentication required", http.StatusUnauthorized)
+				WriteError(w, errors.New("Authentication required"))
 				return
 			}
-			jwtT = cookie.Value
 
-			var valid bool
+			jwtT := cookie.Value
+
 			token, err := jwt.Parse(jwtT, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, jwt.ErrTokenMalformed
@@ -147,12 +145,8 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 				return []byte(pass), nil
 			})
 
-			if err == nil && token.Valid {
-				valid = true
-			}
-
-			if !valid {
-				http.Error(w, "Authentication required", http.StatusUnauthorized)
+			if err != nil || !token.Valid {
+				WriteError(w, errors.New("Authentication required"))
 				return
 			}
 		}
