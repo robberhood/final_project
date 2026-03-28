@@ -14,6 +14,9 @@ import (
 const DateFormat = "20060102"
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
+	// var day [32]bool
+	// var month [13]bool
+
 	if repeat == "" {
 		return "", nil
 	}
@@ -57,13 +60,21 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
-	case "w", "m":
-		//Do it
-		// case "m":
-		//
-		// case "w":
-		//
-		return "", errors.New("field 'repeat' has invalid format")
+	// case "w":
+	// 	if len(parts_repeat)!= 2 {
+	// 		return "", errors.New("field 'repeat' has invalid format")
+	// 	}
+	// 	if len(parts_repeat[1])> 7 {
+	// 		return "", errors.New("field 'repeat' has invalid format")
+	// 	}
+	// 	for _, c := range parts_repeat[1] {
+	// 		if c < '1' || c > '7' {
+	// 			return "", errors.New("field 'repeat' has invalid format")
+	// 		}
+
+	// 	}
+
+	// 	return "", errors.New("field 'repeat' has invalid format")
 
 	default:
 		return "", errors.New("field 'repeat' has invalid format")

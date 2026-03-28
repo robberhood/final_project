@@ -1,8 +1,9 @@
 package config
 
 type Config struct {
-	DBPath string `yaml:"dbpath"`
-	Port   string `yaml:"port"`
+	DBPath   string `yaml:"dbpath"`
+	Port     string `yaml:"port"`
+	Password string `yaml:"password"`
 }
 
 type Task struct {
@@ -15,4 +16,8 @@ type Task struct {
 
 type TasksResp struct {
 	Tasks []*Task `json:"tasks"`
+}
+type Pass struct {
+	Password string `json:"password"`
+	Token    string `json:"token"`
 }

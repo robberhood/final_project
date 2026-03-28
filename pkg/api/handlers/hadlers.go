@@ -67,6 +67,27 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func TasksHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("search")
+	if query != "" {
+		date, err := time.Parse("02.01.2006", query)
+		if err == nil {
+			tasks, err := db.TasksByDate(date.Format(service.DateFormat))
+			if err != nil {
+				service.WriteJson(w, map[string]string{"error": err.Error()})
+				return
+			}
+			service.WriteJson(w, config.TasksResp{Tasks: tasks})
+			return
+		}
+		tasks, err := db.TasksByText(query)
+		if err != nil {
+			service.WriteJson(w, map[string]string{"error": err.Error()})
+			return
+		}
+		service.WriteJson(w, config.TasksResp{Tasks: tasks})
+		return
+	}
+
 	tasks, err := db.Tasks(50)
 	if err != nil {
 		service.WriteError(w, err)
@@ -178,4 +199,19 @@ func TaskDELHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	service.WriteJson(w, map[string]any{})
+}
+
+func SignInHandler(w http.ResponseWriter, r *http.Request) {
+	var pass config.Pass
+
+	if err := json.NewDecoder(r.Body).Decode(&pass); err != nil {
+		service.WriteJson(w, map[string]string{"error": err.Error()})
+		return
+	}
+	if pass.Password != config.Password {
+		service.WriteJson(w, map[string]string{"error": "Incorrect password"})
+		return
+	}
+	pass.Token = service.GenerateToken()
+	service.WriteJson(w, pass)
 }

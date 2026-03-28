@@ -156,3 +156,69 @@ func UpdateDate(id string, date string) error {
 	}
 	return nil
 }
+
+func TasksByDate(date string) ([]*config.Task, error) {
+	query := `SELECT * FROM scheduler WHERE date=? LIMIT ?`
+	var tasks []*config.Task
+
+	rows, err := db.Query(query, date, 50)
+	if err != nil {
+		return tasks, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var t config.Task
+
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Title,
+			&t.Comment,
+			&t.Repeat,
+		)
+		if err != nil {
+			return tasks, err
+		}
+		tasks = append(tasks, &t)
+	}
+
+	if tasks == nil {
+		tasks = []*config.Task{}
+	}
+	return tasks, nil
+}
+
+func TasksByText(text string) ([]*config.Task, error) {
+	query := `SELECT * FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`
+	var tasks []*config.Task
+
+	rows, err := db.Query(query, "%"+text+"%", "%"+text+"%", 50)
+	if err != nil {
+		return tasks, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var t config.Task
+
+		err := rows.Scan(
+			&t.ID,
+			&t.Date,
+			&t.Title,
+			&t.Comment,
+			&t.Repeat,
+		)
+		if err != nil {
+			return tasks, err
+		}
+		tasks = append(tasks, &t)
+	}
+
+	if tasks == nil {
+		tasks = []*config.Task{}
+	}
+	return tasks, nil
+}
