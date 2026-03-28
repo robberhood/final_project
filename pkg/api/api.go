@@ -13,5 +13,5 @@ func Init(r chi.Router) {
 	r.Put("/api/task", handlers.TaskUPDHandler)
 	r.Post("/api/task/done", handlers.TaskCompleteHandler)
 	r.Delete("/api/task", handlers.TaskDELHandler)
-	r.Post("/api/signin", handlers.SignInHandler)
+
 }

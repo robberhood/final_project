@@ -200,18 +200,3 @@ func TaskDELHandler(w http.ResponseWriter, r *http.Request) {
 
 	service.WriteJson(w, map[string]any{})
 }
-
-func SignInHandler(w http.ResponseWriter, r *http.Request) {
-	var pass config.Pass
-
-	if err := json.NewDecoder(r.Body).Decode(&pass); err != nil {
-		service.WriteJson(w, map[string]string{"error": err.Error()})
-		return
-	}
-	if pass.Password != config.Password {
-		service.WriteJson(w, map[string]string{"error": "Incorrect password"})
-		return
-	}
-	pass.Token = service.GenerateToken()
-	service.WriteJson(w, pass)
-}

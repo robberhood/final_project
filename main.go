@@ -19,6 +19,6 @@ func main() {
 	}
 
 	log.Println("server started in: ", cfg.Port)
-	server.Start()
+	server.Start(cfg.Port)
 
 }

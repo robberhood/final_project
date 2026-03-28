@@ -17,7 +17,3 @@ type Task struct {
 type TasksResp struct {
 	Tasks []*Task `json:"tasks"`
 }
-type Pass struct {
-	Password string `json:"password"`
-	Token    string `json:"token"`
-}
