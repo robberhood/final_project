@@ -60,16 +60,15 @@ func AddTask(task *config.Task) (int64, error) {
 func Tasks(limit int) ([]*config.Task, error) {
 	query := `SELECT id,date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?`
 	var tasks []*config.Task
+	var t config.Task
 
 	rows, err := db.Query(query, limit)
 	if err != nil {
-		return tasks, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-
-		var t config.Task
 
 		err := rows.Scan(
 			&t.ID,
@@ -79,9 +78,12 @@ func Tasks(limit int) ([]*config.Task, error) {
 			&t.Repeat,
 		)
 		if err != nil {
-			return tasks, err
+			return nil, err
 		}
 		tasks = append(tasks, &t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	if tasks == nil {
@@ -159,12 +161,12 @@ func UpdateDate(id string, date string) error {
 }
 
 func TasksByDate(date string) ([]*config.Task, error) {
-	query := `SELECT * FROM scheduler WHERE date=? LIMIT ?`
+	query := `SELECT id,date, title, comment, repeat FROM scheduler WHERE date=? LIMIT ?`
 	var tasks []*config.Task
 
 	rows, err := db.Query(query, date, Limit)
 	if err != nil {
-		return tasks, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -180,12 +182,12 @@ func TasksByDate(date string) ([]*config.Task, error) {
 			&t.Repeat,
 		)
 		if err != nil {
-			return tasks, err
+			return nil, err
 		}
 		tasks = append(tasks, &t)
 	}
 	if err := rows.Err(); err != nil {
-		return tasks, err
+		return nil, err
 	}
 
 	if tasks == nil {
@@ -195,12 +197,12 @@ func TasksByDate(date string) ([]*config.Task, error) {
 }
 
 func TasksByText(text string) ([]*config.Task, error) {
-	query := `SELECT * FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`
+	query := `SELECT id,date, title, comment, repeat FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`
 	var tasks []*config.Task
 
 	rows, err := db.Query(query, "%"+text+"%", "%"+text+"%", Limit)
 	if err != nil {
-		return tasks, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -221,7 +223,7 @@ func TasksByText(text string) ([]*config.Task, error) {
 		tasks = append(tasks, &t)
 	}
 	if err := rows.Err(); err != nil {
-		return tasks, err
+		return nil, err
 	}
 
 	if tasks == nil {
