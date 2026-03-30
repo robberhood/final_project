@@ -1,0 +1,151 @@
+package service
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/robberhood/final_project/config"
+)
+
+const DateFormat = "20060102"
+
+func NextDate(now time.Time, dstart string, repeat string) (string, error) {
+	// var day [32]bool
+	// var month [13]bool
+
+	if repeat == "" {
+		return "", nil
+	}
+
+	date, err := time.Parse(DateFormat, dstart)
+	if err != nil {
+		return "", err
+	}
+
+	parts_repeat := strings.Split(repeat, " ")
+	if parts_repeat[0] != "d" && parts_repeat[0] != "y" && parts_repeat[0] != "m" && parts_repeat[0] != "w" {
+		return "", errors.New("field 'repeat' has invalid format")
+	}
+
+	switch parts_repeat[0] {
+	case "y":
+		if len(parts_repeat) != 1 {
+			return "", errors.New("field 'repeat' has invalid format")
+		}
+		for {
+			date = date.AddDate(1, 0, 0)
+			if afterNow(date, now) {
+				break
+			}
+		}
+
+	case "d":
+		if len(parts_repeat) != 2 {
+			return "", errors.New("field 'repeat' has invalid format")
+		}
+		interval, err := strconv.Atoi(parts_repeat[1])
+		if err != nil {
+			return "", errors.New("field 'repeat' has invalid format")
+		}
+		if interval <= 0 || interval > 400 {
+			return "", errors.New("field 'repeat' has invalid interval")
+		}
+		for {
+			date = date.AddDate(0, 0, interval)
+			if afterNow(date, now) {
+				break
+			}
+		}
+	// case "w":
+	// 	if len(parts_repeat)!= 2 {
+	// 		return "", errors.New("field 'repeat' has invalid format")
+	// 	}
+	// 	if len(parts_repeat[1])> 7 {
+	// 		return "", errors.New("field 'repeat' has invalid format")
+	// 	}
+	// 	for _, c := range parts_repeat[1] {
+	// 		if c < '1' || c > '7' {
+	// 			return "", errors.New("field 'repeat' has invalid format")
+	// 		}
+
+	// 	}
+
+	// 	return "", errors.New("field 'repeat' has invalid format")
+
+	default:
+		return "", errors.New("field 'repeat' has invalid format")
+	}
+
+	return date.Format(DateFormat), nil
+
+}
+
+func afterNow(date time.Time, now time.Time) bool {
+	return date.After(now)
+}
+
+func CheckDate(task *config.Task) error {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	if task.Date == "" {
+		task.Date = now.Format(DateFormat)
+		return nil
+	}
+
+	t, err := time.Parse(DateFormat, task.Date)
+	if err != nil {
+		return err
+	}
+
+	next, err := NextDate(now, task.Date, task.Repeat)
+	if err != nil {
+		return err
+	}
+
+	if afterNow(today, t) {
+		if len(task.Repeat) == 0 {
+			task.Date = now.Format(DateFormat)
+		} else {
+			task.Date = next
+		}
+	}
+	return nil
+}
+
+func WriteJson(w http.ResponseWriter, data any) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	encData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+
+	}
+	w.WriteHeader(http.StatusOK)
+
+	_, err = w.Write(encData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func WriteError(w http.ResponseWriter, err error, status int) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	data, err := json.Marshal(map[string]string{"error": err.Error()})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(status)
+
+	_, err = w.Write(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
