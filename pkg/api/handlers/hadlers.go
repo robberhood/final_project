@@ -42,23 +42,23 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task config.Task
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		service.WriteError(w, err)
+		service.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	if task.Title == "" {
-		service.WriteError(w, errors.New("title must be not empty"))
+		service.WriteError(w, errors.New("title must be not empty"), http.StatusBadRequest)
 		return
 	}
 
 	if err := service.CheckDate(&task); err != nil {
-		service.WriteError(w, err)
+		service.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	id, err := db.AddTask(&task)
 	if err != nil {
-		service.WriteError(w, err)
+		service.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -73,7 +73,7 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			tasks, err := db.TasksByDate(date.Format(service.DateFormat))
 			if err != nil {
-				service.WriteJson(w, map[string]string{"error": err.Error()})
+				service.WriteError(w, err, http.StatusBadRequest)
 				return
 			}
 			service.WriteJson(w, config.TasksResp{Tasks: tasks})
@@ -88,9 +88,9 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := db.Tasks(50)
+	tasks, err := db.Tasks(db.Limit)
 	if err != nil {
-		service.WriteError(w, err)
+		service.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 	service.WriteJson(w, config.TasksResp{Tasks: tasks})

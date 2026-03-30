@@ -14,9 +14,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := db.Init(cfg.DBPath); err != nil {
+	dbConnection, err := db.Init(cfg.DBPath)
+	if err != nil {
 		log.Fatal(err)
 	}
+	defer dbConnection.Close()
 
 	log.Println("server started in: ", cfg.Port)
 	server.Start(cfg.Port)

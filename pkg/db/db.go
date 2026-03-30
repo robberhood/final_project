@@ -17,10 +17,11 @@ const schema = `CREATE TABLE scheduler (
 		comment TEXT,
 		repeat VARCHAR(128) NOT NULL DEFAULT "");
 		CREATE INDEX idx_tasks_date ON scheduler(date);`
+const Limit = 50
 
 var db *sql.DB
 
-func Init(dbFile string) error {
+func Init(dbFile string) (*sql.DB, error) {
 	_, err := os.Stat(dbFile)
 
 	var install bool
@@ -30,18 +31,18 @@ func Init(dbFile string) error {
 
 	db, err = sql.Open("sqlite", dbFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err = db.Ping(); err != nil {
-		return err
+		return nil, err
 	}
 	if install {
 		if _, err := db.Exec(schema); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return db, nil
 }
 
 func AddTask(task *config.Task) (int64, error) {
@@ -161,7 +162,7 @@ func TasksByDate(date string) ([]*config.Task, error) {
 	query := `SELECT * FROM scheduler WHERE date=? LIMIT ?`
 	var tasks []*config.Task
 
-	rows, err := db.Query(query, date, 50)
+	rows, err := db.Query(query, date, Limit)
 	if err != nil {
 		return tasks, err
 	}
@@ -182,6 +183,9 @@ func TasksByDate(date string) ([]*config.Task, error) {
 			return tasks, err
 		}
 		tasks = append(tasks, &t)
+	}
+	if err := rows.Err(); err != nil {
+		return tasks, err
 	}
 
 	if tasks == nil {
@@ -194,7 +198,7 @@ func TasksByText(text string) ([]*config.Task, error) {
 	query := `SELECT * FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`
 	var tasks []*config.Task
 
-	rows, err := db.Query(query, "%"+text+"%", "%"+text+"%", 50)
+	rows, err := db.Query(query, "%"+text+"%", "%"+text+"%", Limit)
 	if err != nil {
 		return tasks, err
 	}
@@ -215,6 +219,9 @@ func TasksByText(text string) ([]*config.Task, error) {
 			return tasks, err
 		}
 		tasks = append(tasks, &t)
+	}
+	if err := rows.Err(); err != nil {
+		return tasks, err
 	}
 
 	if tasks == nil {
