@@ -36,6 +36,8 @@ func Init(dbFile string) (*sql.DB, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
+	defer db.Close()
+
 	if install {
 		if _, err := db.Exec(schema); err != nil {
 			return nil, err
